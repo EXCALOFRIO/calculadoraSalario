@@ -1,48 +1,59 @@
 'use client'
+import { TooltipProps } from 'recharts';
+import { NameType, ValueType } from 'recharts/types/component/DefaultTooltipContent';
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronDown, Info, PlusCircle, MinusCircle, Trash2 } from 'lucide-react'
+import { Info, Trash2 } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select"
-import { Slider } from "../../components/ui/slider"
 import { Input } from "../../components/ui/input"
 import { Label } from "../../components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../../components/ui/tooltip"
 import { Button } from "../../components/ui/button"
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer,
-  LineChart, Line, AreaChart, Area, PieChart, Pie, Cell
+  XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer,
+  AreaChart, Area, PieChart, Pie, Cell
 } from 'recharts'
-import { comunidades, tramosEstatales, diasLaborablesMadrid2024 } from '../../data/data'
+import { comunidades, tramosEstatales } from '../../data/data'
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
+
+type ComunidadAutonoma = keyof typeof comunidades;
+
+const isValidComunidad = (value: string): value is ComunidadAutonoma => {
+  return value in comunidades;
+};
 
 export default function Component() {
   const [salarioBrutoInicial, setSalarioBrutoInicial] = useState(30000)
   const [salarioBruto, setSalarioBruto] = useState(30000)
-  const [edad, setEdad] = useState(30)
-  const [pagas, setPagas] = useState(14)
-  const [comunidad, setComunidad] = useState("Madrid")
+  const [comunidad, setComunidad] = useState<ComunidadAutonoma>("Madrid");
   const [salarioNeto, setSalarioNeto] = useState(0)
   const [desglose, setDesglose] = useState({ irpfEstatal: 0, irpfAutonomico: 0, ss: 0 })
   const [porcentajeAumento, setPorcentajeAumento] = useState(0)
-  const [historialAumentos, setHistorialAumentos] = useState([])
-  const [datosMensuales, setDatosMensuales] = useState([])
+  const [historialAumentos, setHistorialAumentos] = useState<Aumento[]>([]);
   const [porcentajeImpuestos, setPorcentajeImpuestos] = useState(0)
 
-  function calcularPorcentajeImpuestos(salarioBrutoNuevo, salarioNetoNuevo, salarioBrutoAnterior, salarioNetoAnterior) {
-    const totalImpuestosNuevo = salarioBrutoNuevo - salarioNetoNuevo;
-    const totalImpuestosAnterior = salarioBrutoAnterior - salarioNetoAnterior;
-    return calcularPorcentajeAumento(totalImpuestosNuevo, totalImpuestosAnterior);
+  function calcularPorcentajeImpuestos(
+    salarioBrutoNuevo: number, 
+    salarioNetoNuevo: number, 
+    salarioBrutoAnterior: number, 
+    salarioNetoAnterior: number
+  ): number {
+      const totalImpuestosNuevo = salarioBrutoNuevo - salarioNetoNuevo;
+      const totalImpuestosAnterior = salarioBrutoAnterior - salarioNetoAnterior;
+      return calcularPorcentajeAumento(totalImpuestosNuevo, totalImpuestosAnterior);
   }
+  
 
-  const calcularPorcentajeAumento = (nuevo, anterior) => {
+  const calcularPorcentajeAumento = (nuevo: number, anterior: number): number => {
     if (anterior === 0) return nuevo === 0 ? 0 : 100;
     return ((nuevo - anterior) / anterior) * 100;
   }
   
-  const calcularSalarioNeto = (salario) => {
+  
+  const calcularSalarioNeto = (salario: number) => {
     const baseImponible = salario - (salario * 0.0635)
     let irpfEstatal = 0
     let irpfAutonomico = 0
@@ -90,21 +101,24 @@ export default function Component() {
     // Now round and set the net salary
     setSalarioNeto(Math.round(salarioBruto - totalImpuestos)); // Calculate neto based on unrounded impuestos
 
-    const totalDiasLaborables = Object.values(diasLaborablesMadrid2024).reduce((a, b) => a + b, 0)
-    const salarioDiario = salarioBruto / totalDiasLaborables
-    const datosMensuales = Object.entries(diasLaborablesMadrid2024).map(([mes, dias]) => {
-      const salarioMensualBruto = Math.round(salarioDiario * dias)
-      const resultadoMensual = calcularSalarioNeto(salarioMensualBruto)
-      return {
-        mes,
-        salarioBruto: salarioMensualBruto,
-        salarioNeto: Math.round(resultadoMensual.neto),
-        diasLaborables: dias
-      }
-    })
-    setDatosMensuales(datosMensuales)
-  }, [salarioBruto, edad, pagas, comunidad])
+  }, [salarioBruto, comunidad])
 
+
+  interface Aumento {
+    fecha: string;
+    salarioBrutoAnterior: number;
+    salarioBrutoNuevo: number;
+    salarioNetoAnterior: number;
+    salarioNetoNuevo: number;
+    irpfEstatalAnterior: number;
+    irpfEstatalNuevo: number;
+    irpfAutonomicoAnterior: number;
+    irpfAutonomicoNuevo: number;
+    ssAnterior: number;
+    ssNuevo: number;
+    porcentajeAumento: number;
+  }
+  
   const handleAumentoSalario = () => {
     const nuevoSalarioBruto = Math.round(salarioBruto * (1 + porcentajeAumento / 100))
     const resultadoActual = calcularSalarioNeto(salarioBruto)
@@ -130,7 +144,7 @@ export default function Component() {
     setPorcentajeAumento(0)
   }
 
-  const eliminarAumento = (index) => {
+  const eliminarAumento = (index: number) => {
     const nuevosAumentos = [...historialAumentos]
     nuevosAumentos.splice(index, 1)
     setHistorialAumentos(nuevosAumentos)
@@ -142,7 +156,7 @@ export default function Component() {
     }
   }
 
-  const formatCurrency = (value) => {
+  const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('es-ES', {
       style: 'currency',
       currency: 'EUR',
@@ -151,15 +165,31 @@ export default function Component() {
     }).format(value);
   };
 
-  const formatPercentage = (value) => {
+  const formatPercentage = (value: number) => {
     return `${value.toFixed(2)}%`
   }
 
+  interface PayloadData {
+      nombre: string;
+      bruto: number;
+      neto: number;
+      totalImpuestos: number;
+      irpfEstatal: number;
+      irpfAutonomico: number;
+      ss: number;
+      initialBruto: number;
+      initialNeto: number;
+      initialTotalImpuestos: number;
+      initialIrpfEstatal: number;
+      initialIrpfAutonomico: number;
+      initialSS: number;
+  }
+  
 
-  const CustomTooltip = ({ active, payload, label }) => {
+  const CustomTooltip = ({ active, payload, label }: TooltipProps<ValueType, NameType>) => {
     if (active && payload && payload.length) {
-      const data = payload[0].payload;
-      
+      const data = payload[0].payload as PayloadData; // Type assertion here
+      // Your existing tooltip rendering logic here
       return (
         <div className="bg-white p-4 border rounded shadow space-y-4">
           <h3 className="text-lg font-bold text-purple-800">{label}</h3>
@@ -266,7 +296,15 @@ export default function Component() {
            
             <div className="space-y-2 md:col-span-3">
               <Label htmlFor="comunidad">Comunidad Autónoma</Label>
-              <Select value={comunidad} onValueChange={setComunidad}>
+              <Select value={comunidad} onValueChange={(value: string) => {
+                  if (isValidComunidad(value)) {
+                    setComunidad(value);
+                  } else {
+                    // Handle the invalid value (e.g., log an error, set a default)
+                    console.error("Invalid comunidad value:", value);
+                    setComunidad("Madrid"); // Or other default
+                  }
+                }}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -369,7 +407,7 @@ export default function Component() {
                         ))
                       }
                     </Pie>
-                    <RechartsTooltip formatter={(value) => formatCurrency(value)} />
+                    <RechartsTooltip formatter={(value) => formatCurrency(value as number)} />
                   </PieChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -485,7 +523,6 @@ export default function Component() {
                   </motion.div>
                 )}
               </AnimatePresence>
-
               {/* Salary Evolution Chart */}
               {historialAumentos.length > 0 && (
                 <motion.div
@@ -533,7 +570,8 @@ export default function Component() {
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="nombre" />
                       <YAxis />
-                      <RechartsTooltip content={<CustomTooltip />} />
+                      <RechartsTooltip content={(props: TooltipProps<ValueType, NameType>) => <CustomTooltip {...props} />} />
+
                       <Legend />
                       <Area type="monotone" dataKey="totalImpuestos" name="Total Impuestos" stackId="2" stroke="#ffc658" fill="#ffc658" />
                       <Area type="monotone" dataKey="neto" name="Salario Neto" stackId="2" stroke="#82ca9d" fill="#82ca9d" />

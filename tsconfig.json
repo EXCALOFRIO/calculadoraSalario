@@ -1,26 +1,55 @@
 {
   "compilerOptions": {
-    "lib": ["dom", "dom.iterable", "esnext"],
-    "allowJs": true,
-    "skipLibCheck": true,
-    "strict": true,
-    "noEmit": true,
-    "esModuleInterop": true,
-    "module": "esnext",
-    "moduleResolution": "bundler",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "jsx": "preserve",
-    "incremental": true,
+    "target": "esnext", // Ensures you're compiling for the latest ES features
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "allowJs": true, // Allows JavaScript files to be compiled
+    "skipLibCheck": true, // Skips type checking for declaration files in node_modules
+    "strict": true, // Enables all strict type-checking options
+    "noEmit": true, // Prevents emitting compiled output (since Next.js handles this)
+    "esModuleInterop": true, // Enables better interop between ES modules and CommonJS
+    "module": "esnext", // The module system to use in transpiled code (modern module system)
+    "moduleResolution": "node", // Resolve module imports as Node.js would
+    "resolveJsonModule": true, // Allows importing JSON files
+    "isolatedModules": true, // Ensures every file can be safely transpiled
+    "jsx": "preserve", // Keeps JSX as-is (important for Next.js)
+    "incremental": true, // Speeds up the compilation by enabling incremental builds
+    "forceConsistentCasingInFileNames": true, // Ensures import paths are case-sensitive
+    "allowSyntheticDefaultImports": true, // Allows default imports from modules without default exports
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ] // Correct alias for your project structure
+    },
+    "types": [
+      "node",
+      "react",
+      "next"
+    ], // Add necessary types for Next.js, Node, React, and Jest (if using)
+    "baseUrl": ".", // Ensures your imports start from the root of the project
+    "noFallthroughCasesInSwitch": true // Helps catch fall-through errors in switch cases
+    ,
     "plugins": [
       {
         "name": "next"
       }
-    ],
-    "paths": {
-      "@/*": ["./src/*"]
-    }
+    ]
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    "src/**/*.ts",
+    "src/**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "build",
+    ".next",
+    "out"
+  ]
 }
